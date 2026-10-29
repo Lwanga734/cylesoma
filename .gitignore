@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+key.properties
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+coverage/
+supabase/.branches/
+supabase/.temp/
+.vercel/
+.dart_tool/
+build/
+*.g.dart
