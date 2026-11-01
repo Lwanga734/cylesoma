@@ -21,6 +21,13 @@ export function canInvite(callerRole: string | null | undefined, target: string)
   return (invitableRoles(callerRole) as readonly string[]).includes(target);
 }
 
+// Platform super admins only bootstrap a school's leadership; the school's head does the rest.
+export const PLATFORM_INVITABLE: readonly SchoolRole[] = ['head', 'owner'];
+
+export function canPlatformInvite(target: string): boolean {
+  return (PLATFORM_INVITABLE as readonly string[]).includes(target);
+}
+
 export function isValidEmail(s: unknown): s is string {
   return typeof s === 'string' && s.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }

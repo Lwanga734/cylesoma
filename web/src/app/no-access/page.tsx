@@ -8,6 +8,7 @@ export const metadata = { title: 'No access' };
 
 export default async function NoAccessPage() {
   const session = await requireSession();
+  if (session.isPlatformAdmin) redirect('/platform');
   if (session.role) redirect(homeForRole(session.role));
   return (
     <AuthShell title="No access yet">

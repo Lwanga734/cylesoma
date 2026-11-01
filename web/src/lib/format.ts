@@ -12,3 +12,15 @@ export function formatDate(d: Date | string): string {
 export function safeHexColor(hex: string | null | undefined, fallback = DEFAULT_BRAND): string {
   return hex && /^#[0-9a-fA-F]{6}$/.test(hex) ? hex.toLowerCase() : fallback;
 }
+
+/** "St. Mary's Primary" -> "st-mary-s-primary" (letters, digits and single hyphens, max 50). */
+export function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 50)
+    .replace(/-+$/, '');
+}

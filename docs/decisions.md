@@ -14,3 +14,5 @@
 | 2026-10-17 | Email invite/reset links use `/auth/confirm?token_hash=...` (server-side verifyOtp) | Avoids URL-fragment problems; same flow on desktop and phones |
 | 2026-10-17 | Offline strategy becomes PWA: service worker + IndexedDB outbox (Sprint 2) | Replaces Drift/SQLite; iOS lacks background sync so sync also runs on open/foreground |
 | 2026-10-17 | Flutter code archived in /archive/flutter-app | Reference only |
+| 2026-10-29 | Platform super admin = row in `platform_admins`, checked live in the database (not a JWT claim) | Instant revocation; no dependency on the login hook |
+| 2026-10-29 | Super admins create schools via SECURITY DEFINER functions and may only invite a school's head/owner | Super admin manages the platform but does not read school data (students, marks, fees) |

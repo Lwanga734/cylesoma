@@ -4,7 +4,7 @@ export const SCHOOL_ROLES = [
 ] as const;
 export type SchoolRole = (typeof SCHOOL_ROLES)[number];
 
-export type Section = 'admin' | 'teacher' | 'parent' | 'student';
+export type Section = 'admin' | 'teacher' | 'parent' | 'student' | 'platform';
 
 /** Which section each role lands in. Staff roles share /admin for now. */
 export function homeForRole(role: string | null | undefined): string {
@@ -22,6 +22,11 @@ export function homeForRole(role: string | null | undefined): string {
     default:
       return '/admin';
   }
+}
+
+/** Where a signed-in user lands. Platform super admins always land on /platform. */
+export function landingPath(role: string | null | undefined, isPlatformAdmin = false): string {
+  return isPlatformAdmin ? '/platform' : homeForRole(role);
 }
 
 /**

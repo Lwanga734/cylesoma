@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, safeHexColor } from './format';
+import { formatDate, safeHexColor, slugify } from './format';
 import { safeNext } from './safe-next';
 
 describe('safeHexColor', () => {
@@ -25,5 +25,15 @@ describe('safeNext', () => {
     expect(safeNext('//evil.com')).toBe('/');
     expect(safeNext('/\\evil.com')).toBe('/');
     expect(safeNext(null, '/x')).toBe('/x');
+  });
+});
+
+describe('slugify', () => {
+  it('makes safe web names', () => {
+    expect(slugify("St. Mary's Primary School")).toBe('st-mary-s-primary-school');
+    expect(slugify('  Kampala   Parents’ School ')).toBe('kampala-parents-school');
+    expect(slugify('Écolé Test')).toBe('ecole-test');
+    expect(slugify('***')).toBe('');
+    expect(slugify('a'.repeat(80)).length).toBe(50);
   });
 });

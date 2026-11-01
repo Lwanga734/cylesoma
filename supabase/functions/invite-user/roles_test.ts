@@ -1,4 +1,4 @@
-import { canInvite, decodeJwtPayload, invitableRoles, isUuid, isValidEmail } from './roles.ts';
+import { canInvite, canPlatformInvite, decodeJwtPayload, invitableRoles, isUuid, isValidEmail } from './roles.ts';
 
 function check(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
@@ -44,4 +44,12 @@ Deno.test('decodeJwtPayload reads base64url claims and tolerates junk', () => {
   const claims = decodeJwtPayload(`h.${payload}.sig`);
   check(claims.school_id === 's1' && claims.user_role === 'head', 'claims decoded');
   check(Object.keys(decodeJwtPayload('garbage')).length === 0, 'garbage -> empty');
+});
+
+Deno.test('platform admins can bootstrap a head or owner but nothing else', () => {
+  check(canPlatformInvite('head'), 'platform->head');
+  check(canPlatformInvite('owner'), 'platform->owner');
+  check(!canPlatformInvite('teacher'), 'platform must not invite teachers');
+  check(!canPlatformInvite('parent'), 'platform must not invite parents');
+  check(!canPlatformInvite('platform_admin'), 'platform_admin can never be granted by invitation');
 });

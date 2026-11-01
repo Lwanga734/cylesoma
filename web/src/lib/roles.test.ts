@@ -35,3 +35,13 @@ describe('roleLabel', () => {
     expect(roleLabel(null)).toBe('Unknown');
   });
 });
+
+describe('landingPath', () => {
+  it('sends platform admins to /platform and everyone else by role', async () => {
+    const { landingPath } = await import('./roles');
+    expect(landingPath(null, true)).toBe('/platform');
+    expect(landingPath('teacher', true)).toBe('/platform');
+    expect(landingPath('teacher', false)).toBe('/teacher');
+    expect(landingPath(null, false)).toBe('/no-access');
+  });
+});

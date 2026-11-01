@@ -1,7 +1,9 @@
-// Invites a user into the CALLER'S school with a role. The school always comes from the
-// caller's verified JWT claims, never from the request body.
+// Invites a user into a school with a role.
+// - School staff: the school ALWAYS comes from the caller's verified JWT, never from the request body.
+// - Platform super admins (rows in public.platform_admins): may name any school, but only to bootstrap
+//   its leadership (head or owner).
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { canInvite, decodeJwtPayload, isUuid, isValidEmail } from './roles.ts';
+import { canInvite, canPlatformInvite, decodeJwtPayload, isUuid, isValidEmail } from './roles.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -26,11 +28,9 @@ Deno.serve(async (req: Request) => {
   if (userErr || !user) return json({ error: 'unauthorized' }, 401);
 
   const claims = decodeJwtPayload(authHeader.replace(/^Bearer\s+/i, ''));
-  const schoolId = claims.school_id;
   const callerRole = typeof claims.user_role === 'string' ? claims.user_role : null;
-  if (!isUuid(schoolId)) return json({ error: 'no active school' }, 403);
 
-  // 2. Validate input and permission.
+  // 2. Validate input.
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: 'invalid json' }, 400); }
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
@@ -38,10 +38,30 @@ Deno.serve(async (req: Request) => {
   const role = typeof body.role === 'string' ? body.role : '';
   if (!isValidEmail(email)) return json({ error: 'invalid email' }, 400);
   if (!fullName) return json({ error: 'full name required' }, 400);
-  if (!canInvite(callerRole, role)) return json({ error: 'you cannot invite this role' }, 403);
 
   // 3. Privileged work with the service role.
   const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const { data: platformRow } = await admin
+    .from('platform_admins').select('user_id').eq('user_id', user.id).maybeSingle();
+  const isPlatformAdmin = !!platformRow;
+
+  // 4. Decide which school and whether this caller may grant this role there.
+  let schoolId: string;
+  if (isPlatformAdmin && isUuid(body.school_id)) {
+    if (!canPlatformInvite(role)) {
+      return json({ error: 'platform admins can only invite a head teacher or owner' }, 403);
+    }
+    const { data: school } = await admin.from('schools').select('id').eq('id', body.school_id).maybeSingle();
+    if (!school) return json({ error: 'school not found' }, 404);
+    schoolId = body.school_id;
+  } else {
+    const claimSchool = claims.school_id;
+    if (!isUuid(claimSchool)) return json({ error: 'no active school' }, 403);
+    if (!canInvite(callerRole, role)) return json({ error: 'you cannot invite this role' }, 403);
+    schoolId = claimSchool;
+  }
+
+  // 5. Create or find the user, then add the membership.
   const { data: existingId } = await admin.rpc('find_user_id_by_email', { p_email: email });
   let userId = existingId as string | null;
   let invited = false;
@@ -66,7 +86,7 @@ Deno.serve(async (req: Request) => {
     user_id: userId, school_id: schoolId, role, status: 'active', invited_by: user.id,
   });
   if (memErr) {
-    if (memErr.code === '23505') return json({ error: 'already has this role in your school' }, 409);
+    if (memErr.code === '23505') return json({ error: 'already has this role in this school' }, 409);
     return json({ error: 'could not add member' }, 500);
   }
   return json({ user_id: userId, invited });
