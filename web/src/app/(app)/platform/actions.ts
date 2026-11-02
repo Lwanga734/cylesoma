@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireSection } from '@/lib/auth';
@@ -10,15 +11,35 @@ import type { ActionState } from '@/lib/action-state';
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
-type InviteResult = { error: string | null; invited: boolean };
+type Deliver = 'link' | 'email';
+type InviteResult = { error: string | null; invited: boolean; link?: string };
+
+function parseDeliver(value: FormDataEntryValue | null): Deliver {
+  return value === 'email' ? 'email' : 'link';
+}
+
+/** Builds the sign-in link from the address the platform admin is using right now. */
+async function inviteLink(tokenHash: string): Promise<string> {
+  const h = await headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
+  const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  return `${proto}://${host}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=invite&next=%2Fset-password`;
+}
 
 /** Asks the invite-user Edge Function to make `email` the head teacher of `schoolId`. */
-async function inviteHeadTo(schoolId: string, name: string, email: string): Promise<InviteResult> {
+async function inviteHeadTo(schoolId: string, name: string, email: string, deliver: Deliver): Promise<InviteResult> {
   const supabase = await createClient();
   const { data, error } = await supabase.functions.invoke('invite-user', {
-    body: { school_id: schoolId, role: 'head', full_name: name, email },
+    body: { school_id: schoolId, role: 'head', full_name: name, email, deliver },
   });
-  if (!error) return { error: null, invited: data?.invited === true };
+  if (!error) {
+    const tokenHash = typeof data?.token_hash === 'string' ? data.token_hash : null;
+    return {
+      error: null,
+      invited: data?.invited === true,
+      link: tokenHash ? await inviteLink(tokenHash) : undefined,
+    };
+  }
   let message = 'The invitation failed.';
   if (error instanceof FunctionsHttpError) {
     try {
@@ -43,6 +64,7 @@ export async function createSchool(_prev: ActionState, formData: FormData): Prom
     head_name: String(formData.get('head_name') ?? ''),
     head_email: String(formData.get('head_email') ?? ''),
   };
+  const deliver = parseDeliver(formData.get('deliver'));
   const fail = (error: string): ActionState => ({ error, values: raw });
 
   const name = raw.name.trim();
@@ -77,17 +99,20 @@ export async function createSchool(_prev: ActionState, formData: FormData): Prom
 
   if (!wantsHead) return { ok: true, message: `${name} was created. Invite its head teacher from the list below.` };
 
-  const result = await inviteHeadTo(schoolId, headName, headEmail);
+  const result = await inviteHeadTo(schoolId, headName, headEmail, deliver);
   if (result.error) {
     return {
       ok: true,
       message: `${name} was created, but the invitation failed (${result.error}). Use "Invite head teacher" in the list below.`,
     };
   }
+  if (result.link) {
+    return { ok: true, message: `${name} was created. Send this link to ${headEmail}:`, link: result.link };
+  }
   return {
     ok: true,
     message: result.invited
-      ? `${name} was created and an invitation was sent to ${headEmail}.`
+      ? `${name} was created and an invitation email was sent to ${headEmail}.`
       : `${name} was created and ${headEmail} (already a user) was made its head teacher.`,
   };
 }
@@ -107,13 +132,21 @@ export async function inviteHead(_prev: ActionState, formData: FormData): Promis
     });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Invalid input.' };
 
-  const result = await inviteHeadTo(parsed.data.school_id, parsed.data.name, parsed.data.email);
+  const result = await inviteHeadTo(
+    parsed.data.school_id,
+    parsed.data.name,
+    parsed.data.email,
+    parseDeliver(formData.get('deliver')),
+  );
   if (result.error) return { error: result.error };
   revalidatePath('/platform');
+  if (result.link) {
+    return { ok: true, message: `Send this link to ${parsed.data.email}:`, link: result.link };
+  }
   return {
     ok: true,
     message: result.invited
-      ? `Invitation sent to ${parsed.data.email}.`
+      ? `Invitation email sent to ${parsed.data.email}.`
       : `${parsed.data.email} (already a user) was made head teacher.`,
   };
 }

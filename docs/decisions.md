@@ -16,3 +16,4 @@
 | 2026-10-17 | Flutter code archived in /archive/flutter-app | Reference only |
 | 2026-10-29 | Platform super admin = row in `platform_admins`, checked live in the database (not a JWT claim) | Instant revocation; no dependency on the login hook |
 | 2026-10-29 | Super admins create schools via SECURITY DEFINER functions and may only invite a school's head/owner | Super admin manages the platform but does not read school data (students, marks, fees) |
+| 2026-11-02 | Platform admins can create invitation links (no email) for head teachers | Email sending is restricted on new Supabase projects; WhatsApp is how schools here communicate. Links are platform-admin only because whoever holds one can set that account's password |

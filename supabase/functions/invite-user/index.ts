@@ -1,7 +1,8 @@
 // Invites a user into a school with a role.
 // - School staff: the school ALWAYS comes from the caller's verified JWT, never from the request body.
 // - Platform super admins (rows in public.platform_admins): may name any school, but only to bootstrap
-//   its leadership (head or owner).
+//   its leadership (head or owner). They may also ask for `deliver: 'link'`, which creates the user and
+//   returns a one-time token instead of sending an email (to share by WhatsApp, or when email is not set up).
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { canInvite, canPlatformInvite, decodeJwtPayload, isUuid, isValidEmail } from './roles.ts';
 
@@ -62,18 +63,36 @@ Deno.serve(async (req: Request) => {
   }
 
   // 5. Create or find the user, then add the membership.
+  // 'link' delivery (no email sent) is only for platform admins: the link lets whoever holds it set the
+  // password for that account, so it must not be handed to ordinary school staff.
+  const deliver = body.deliver === 'link' && isPlatformAdmin ? 'link' : 'email';
   const { data: existingId } = await admin.rpc('find_user_id_by_email', { p_email: email });
   let userId = existingId as string | null;
   let invited = false;
+  let tokenHash: string | null = null;
 
   if (!userId) {
-    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName },
-      redirectTo: Deno.env.get('INVITE_REDIRECT_URL') ?? undefined,
-    });
-    if (error || !data.user) return json({ error: 'could not send invitation' }, 502);
-    userId = data.user.id;
-    invited = true;
+    if (deliver === 'link') {
+      const { data, error } = await admin.auth.admin.generateLink({
+        type: 'invite',
+        email,
+        options: { data: { full_name: fullName } },
+      });
+      if (error || !data?.user || !data.properties?.hashed_token) {
+        return json({ error: 'could not create the invitation link' }, 502);
+      }
+      userId = data.user.id;
+      tokenHash = data.properties.hashed_token;
+      invited = true;
+    } else {
+      const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+        data: { full_name: fullName },
+        redirectTo: Deno.env.get('INVITE_REDIRECT_URL') ?? undefined,
+      });
+      if (error || !data.user) return json({ error: 'could not send invitation email' }, 502);
+      userId = data.user.id;
+      invited = true;
+    }
   }
 
   // Create the profile if missing; never overwrite an existing user's active school or name.
@@ -89,5 +108,5 @@ Deno.serve(async (req: Request) => {
     if (memErr.code === '23505') return json({ error: 'already has this role in this school' }, 409);
     return json({ error: 'could not add member' }, 500);
   }
-  return json({ user_id: userId, invited });
+  return json({ user_id: userId, invited, ...(tokenHash ? { token_hash: tokenHash } : {}) });
 });

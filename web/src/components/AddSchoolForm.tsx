@@ -33,6 +33,13 @@ export function AddSchoolForm() {
         <label className="label" htmlFor="s-head-email">Head teacher email</label>
         <input id="s-head-email" name="head_email" type="email" defaultValue={v.head_email} className="input" />
       </div>
+      <div className="sm:col-span-2">
+        <label className="label" htmlFor="s-deliver">How to send the invitation</label>
+        <select id="s-deliver" name="deliver" defaultValue="link" className="input">
+          <option value="link">Make a link I can share (WhatsApp)</option>
+          <option value="email">Send an email invitation</option>
+        </select>
+      </div>
       <div className="space-y-2 sm:col-span-2">
         <p className="text-xs text-slate-600">
           Add the head teacher now and they receive an invitation email. You can also leave both blank and invite later.
