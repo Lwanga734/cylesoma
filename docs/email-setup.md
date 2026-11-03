@@ -27,3 +27,18 @@ messages to ordinary addresses, so use your own SMTP service for real schools. (
   Profile > Switch school.
 - Shareable links are one-time and for one person. Whoever opens one first can set the password for that new account,
   so send it only to the person it is for.
+
+## Troubleshooting: "I was invited but my password does not work"
+Cause: Supabase's DEFAULT invitation email ("You've been invited ... Accept invitation") returns the person to the app
+with sign-in tokens in the address bar. Older versions of the app ignored them, so the person was never asked to choose a
+password and then tried to sign in with one that did not exist. (Supabase's logs show this as a successful `/verify`,
+no `PUT /user`, then a failed password login.)
+
+What fixes it now:
+1. The app reads those tokens (`AuthHashHandler`) and sends the person to **Set your password**.
+2. Paste the CyleSoma templates (`supabase/templates/invite.html` and `recovery.html`) into Supabase > Authentication >
+   Emails > Templates, and set the Site URL (Authentication > URL Configuration). These links go through
+   `/auth/confirm`, which keeps tokens out of the address bar and is the preferred route.
+
+For someone whose invitation link was already used before the fix: on the sign-in page choose **Forgot your password?**,
+enter their email, open the email and choose a password. Their school membership is already in place.
