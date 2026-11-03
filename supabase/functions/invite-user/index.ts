@@ -1,8 +1,10 @@
 // Invites a user into a school with a role.
 // - School staff: the school ALWAYS comes from the caller's verified JWT, never from the request body.
 // - Platform super admins (rows in public.platform_admins): may name any school, but only to bootstrap
-//   its leadership (head or owner). They may also ask for `deliver: 'link'`, which creates the user and
-//   returns a one-time token instead of sending an email (to share by WhatsApp, or when email is not set up).
+//   its leadership (head or owner).
+// - Any permitted inviter may ask for `deliver: 'link'`: for a NEW account the user is created and a one-time
+//   token is returned instead of sending an email (to share by WhatsApp, or while email is not set up).
+//   Existing accounts are only added to the school; no link or email is ever produced for them.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { canInvite, canPlatformInvite, decodeJwtPayload, isUuid, isValidEmail } from './roles.ts';
 
@@ -63,9 +65,9 @@ Deno.serve(async (req: Request) => {
   }
 
   // 5. Create or find the user, then add the membership.
-  // 'link' delivery (no email sent) is only for platform admins: the link lets whoever holds it set the
-  // password for that account, so it must not be handed to ordinary school staff.
-  const deliver = body.deliver === 'link' && isPlatformAdmin ? 'link' : 'email';
+  // 'link' delivery sends no email. Whoever holds the link can set the new account's password, so it is
+  // only ever created for brand-new accounts (see below), never for someone who already has an account.
+  const deliver = body.deliver === 'link' ? 'link' : 'email';
   const { data: existingId } = await admin.rpc('find_user_id_by_email', { p_email: email });
   let userId = existingId as string | null;
   let invited = false;

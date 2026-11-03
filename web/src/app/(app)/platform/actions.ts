@@ -1,11 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { requireSection } from '@/lib/auth';
 import { slugify } from '@/lib/format';
+import { friendlyInviteError, inviteLink } from '@/lib/invite-link';
 import { createClient } from '@/lib/supabase/server';
 import type { ActionState } from '@/lib/action-state';
 
@@ -16,14 +16,6 @@ type InviteResult = { error: string | null; invited: boolean; link?: string };
 
 function parseDeliver(value: FormDataEntryValue | null): Deliver {
   return value === 'email' ? 'email' : 'link';
-}
-
-/** Builds the sign-in link from the address the platform admin is using right now. */
-async function inviteLink(tokenHash: string): Promise<string> {
-  const h = await headers();
-  const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
-  const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
-  return `${proto}://${host}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=invite&next=%2Fset-password`;
 }
 
 /** Asks the invite-user Edge Function to make `email` the head teacher of `schoolId`. */
@@ -49,7 +41,7 @@ async function inviteHeadTo(schoolId: string, name: string, email: string, deliv
       /* keep generic message */
     }
   }
-  return { error: message, invited: false };
+  return { error: friendlyInviteError(message), invited: false };
 }
 
 const headSchema = z.object({ name: z.string().trim().min(1).max(120), email: z.email() });

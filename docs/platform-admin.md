@@ -32,3 +32,8 @@ Before the first head teacher signs in, enable the login hook in Supabase (Authe
 `public.custom_access_token_hook`). Without it a new user has no school or role and sees "No access".
 In Authentication > Sign In / Providers > Email, raise the email OTP expiry (for example to 86400 seconds = 24 hours)
 so a link sent on WhatsApp is still valid when it is opened.
+
+## Staff and parent invitations (school heads)
+Heads, registrars and HR officers can also choose "Make a link I can share (WhatsApp)" on the Invite users page. Links are
+created only for brand-new accounts; existing accounts are simply added to the school. See `docs/email-setup.md` to set up
+email delivery.
