@@ -20,3 +20,5 @@
 | 2026-11-02 | Shareable invitation links are available to every permitted inviter, for NEW accounts only | Email sending is not set up yet and schools use WhatsApp; existing accounts never get a link, so no takeover of someone's existing account is possible |
 | 2026-11-03 | Member changes only through SECURITY DEFINER functions (`update_member`, `remove_member`); direct membership writes by heads removed | Enforces "keep one head", "not yourself", per-role limits, and re-checks the live membership instead of trusting an old token |
 | 2026-11-03 | Setup links can be re-issued only while `profiles.password_set_at` is empty and the person belongs to no other school | Helps stuck invitees without allowing takeover of accounts in use |
+| 2026-11-03 | School suspension is enforced in `current_school()` (returns null for a non-active school) | One change blocks every row-level-security rule for that school at once, without touching each policy |
+| 2026-11-03 | Schools can be deleted only when suspended and free of student records, with the web name typed | Prevents accidental permanent data loss |

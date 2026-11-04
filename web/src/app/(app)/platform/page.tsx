@@ -1,21 +1,14 @@
+import Link from 'next/link';
 import { AddSchoolForm } from '@/components/AddSchoolForm';
 import { InviteHeadForm } from '@/components/InviteHeadForm';
 import { requireSection } from '@/lib/auth';
+import type { PlatformSchool } from '@/lib/data';
 import { formatDate, safeHexColor } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
 
 export const metadata = { title: 'Platform' };
 
-type SchoolRow = {
-  id: string;
-  name: string;
-  slug: string;
-  status: string;
-  primary_color: string;
-  created_at: string;
-  members: number;
-  heads: number;
-};
+type SchoolRow = PlatformSchool;
 
 export default async function PlatformPage() {
   await requireSection('platform');
@@ -30,6 +23,21 @@ export default async function PlatformPage() {
         <p className="mt-1 text-sm text-slate-600">
           Add schools and invite their head teachers. School data stays private to each school.
         </p>
+      </section>
+
+      <section className="grid grid-cols-3 gap-3 text-center">
+        <div className="card">
+          <p className="text-2xl font-semibold">{schools.length}</p>
+          <p className="text-xs text-slate-600">Schools</p>
+        </div>
+        <div className="card">
+          <p className="text-2xl font-semibold">{schools.filter((s) => s.status === 'active').length}</p>
+          <p className="text-xs text-slate-600">Active</p>
+        </div>
+        <div className="card">
+          <p className="text-2xl font-semibold">{schools.reduce((n, s) => n + Number(s.members), 0)}</p>
+          <p className="text-xs text-slate-600">Members</p>
+        </div>
       </section>
 
       <section className="card">
@@ -52,7 +60,14 @@ export default async function PlatformPage() {
                     style={{ backgroundColor: safeHexColor(s.primary_color) }}
                   />
                   <div>
-                    <p className="font-medium">{s.name}</p>
+                    <Link href={`/platform/schools/${s.id}`} className="font-medium text-accent underline">
+                      {s.name}
+                    </Link>
+                    {s.status !== 'active' && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                        Suspended
+                      </span>
+                    )}
                     <p className="text-sm text-slate-600">
                       {s.slug} · added {formatDate(s.created_at.slice(0, 10))}
                     </p>

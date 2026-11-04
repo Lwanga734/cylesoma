@@ -43,6 +43,10 @@ Deno.serve(async (req: Request) => {
   const { data: platformRow } = await admin
     .from('platform_admins').select('user_id').eq('user_id', user.id).maybeSingle();
   const isPlatformAdmin = !!platformRow;
+  const schoolIsActive = async (id: string) => {
+    const { data } = await admin.from('schools').select('status').eq('id', id).maybeSingle();
+    return data?.status === 'active';
+  };
 
   // ---- Re-issue a setup link for an existing member who never chose a password ----
   if (body.action === 'reissue_link') {
@@ -52,6 +56,9 @@ Deno.serve(async (req: Request) => {
     if (!m) return json({ error: 'member not found' }, 404);
 
     const sameSchool = isUuid(claims.school_id) && m.school_id === claims.school_id;
+    if (sameSchool && !isPlatformAdmin && !(await schoolIsActive(m.school_id))) {
+      return json({ error: 'this school is suspended' }, 403);
+    }
     const allowed = (sameSchool && canInvite(callerRole, m.role)) ||
       (isPlatformAdmin && canPlatformInvite(m.role));
     if (!allowed) return json({ error: 'you cannot manage this member' }, 403);
@@ -91,6 +98,7 @@ Deno.serve(async (req: Request) => {
     const claimSchool = claims.school_id;
     if (!isUuid(claimSchool)) return json({ error: 'no active school' }, 403);
     if (!canInvite(callerRole, role)) return json({ error: 'you cannot invite this role' }, 403);
+    if (!(await schoolIsActive(claimSchool))) return json({ error: 'this school is suspended' }, 403);
     schoolId = claimSchool;
   }
 

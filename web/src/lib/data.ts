@@ -7,6 +7,7 @@ export type School = {
   motto: string | null;
   primary_color: string;
   logo_path: string | null;
+  status: string;
 };
 export type Term = {
   id: string;
@@ -22,7 +23,7 @@ export const getSchool = cache(async (schoolId: string): Promise<School | null> 
   const supabase = await createClient();
   const { data } = await supabase
     .from('schools')
-    .select('id, name, motto, primary_color, logo_path')
+    .select('id, name, motto, primary_color, logo_path, status')
     .eq('id', schoolId)
     .maybeSingle();
   return (data as School | null) ?? null;
@@ -68,3 +69,27 @@ export async function getSchoolMembers(): Promise<{ members: Member[]; failed: b
   if (error) return { members: [], failed: true };
   return { members: (data as Member[] | null) ?? [], failed: false };
 }
+
+export type PlatformSchool = {
+  id: string;
+  name: string;
+  slug: string;
+  motto: string | null;
+  status: string;
+  primary_color: string;
+  created_at: string;
+  members: number;
+  heads: number;
+};
+
+export type Leader = {
+  membership_id: string;
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  status: string;
+  created_at: string;
+  last_sign_in_at: string | null;
+  password_set: boolean;
+};

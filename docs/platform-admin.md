@@ -37,3 +37,21 @@ so a link sent on WhatsApp is still valid when it is opened.
 Heads, registrars and HR officers can also choose "Make a link I can share (WhatsApp)" on the Invite users page. Links are
 created only for brand-new accounts; existing accounts are simply added to the school. See `docs/email-setup.md` to set up
 email delivery.
+
+## Managing schools (super admin)
+Open **Platform**, then click a school's name to manage it (`/platform/schools/<id>`):
+- **School details** - rename, change the web name, motto and brand colour.
+- **Head teachers and owners** - see them, suspend/reactivate, remove, create a **New setup link** for someone who never chose a
+  password, or invite another head teacher. The head teacher manages everyone else in their school (Members page).
+- **Access** - **Suspend** a school: everyone in it immediately loses access to its data (the database rule
+  `current_school()` stops matching), but nothing is deleted. **Reactivate** restores it. A banner tells suspended
+  members what happened.
+- **Delete school** - permanent. Only for a SUSPENDED school with NO student records, and you must type its web name.
+  Accounts stay; the school and its memberships go. When new modules store school data, extend the check in
+  `platform_delete_school`.
+
+Safety rules: a school always keeps one active head teacher; every action re-checks that you are a platform admin and is
+written to the audit log (`PLATFORM_UPDATE_SCHOOL`, `PLATFORM_SET_SCHOOL_STATUS`, `PLATFORM_DELETE_SCHOOL`).
+You manage a school's leadership and settings, not its students, marks or fees.
+
+`supabase/tests/platform_check.sql` runs 14 checks against your database and rolls everything back.

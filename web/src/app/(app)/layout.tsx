@@ -32,7 +32,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl space-y-4 p-4">{children}</main>
+      <main className="mx-auto max-w-3xl space-y-4 p-4">
+        {school && school.status !== 'active' && (
+          <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            {school.name} is suspended, so access to its data is paused. Contact CyleSoma support or your head
+            teacher.
+          </p>
+        )}
+        {children}
+      </main>
     </div>
   );
 }
