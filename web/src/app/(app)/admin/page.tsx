@@ -27,6 +27,12 @@ export default async function AdminHome() {
           </Link>
         )}
         {canInvite && (
+          <Link href="/admin/members" className="card block hover:border-accent">
+            <h2 className="font-semibold">Members</h2>
+            <p className="text-sm text-slate-600">Change roles, suspend, remove, setup links</p>
+          </Link>
+        )}
+        {canInvite && (
           <Link href="/admin/invite" className="card block hover:border-accent">
             <h2 className="font-semibold">Invite users</h2>
             <p className="text-sm text-slate-600">Teachers, staff, parents, students</p>

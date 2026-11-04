@@ -40,7 +40,7 @@ export function FormMessage({ state }: { state: ActionState }) {
             </button>
           </div>
           <p className="text-xs text-slate-600">
-            Send this to the head teacher yourself, for example on WhatsApp. It is for one person only and
+            Send this to the person yourself, for example on WhatsApp. It is for one person only and
             expires, and they choose their own password. Do not post it anywhere public.
           </p>
         </>

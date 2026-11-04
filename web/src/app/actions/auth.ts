@@ -50,5 +50,14 @@ export async function setPassword(_prev: ActionState, formData: FormData): Promi
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return { error: 'Could not save the password. Try again.' };
+
+  // Remember that this person has chosen a password, so nobody can re-issue a setup link for the account.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  if (typeof userId === 'string') {
+    await supabase
+      .from('profiles')
+      .upsert({ user_id: userId, password_set_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  }
   redirect('/');
 }
