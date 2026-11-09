@@ -57,3 +57,13 @@ export function roleLabel(role: string | null | undefined): string {
       return role.charAt(0).toUpperCase() + role.slice(1);
   }
 }
+
+/** Who may see students (mirrors the students_read policy), and who may change students and classes. */
+export const STUDENT_VIEW_ROLES = ['owner', 'head', 'deputy', 'hod', 'registrar', 'bursar'] as const;
+export const STUDENT_WRITE_ROLES = ['head', 'registrar'] as const;
+export const CLASS_WRITE_ROLES = ['head', 'deputy', 'registrar'] as const;
+
+const has = (list: readonly string[], role: string | null | undefined) => !!role && list.includes(role);
+export const canViewStudents = (role: string | null | undefined) => has(STUDENT_VIEW_ROLES, role);
+export const canManageStudents = (role: string | null | undefined) => has(STUDENT_WRITE_ROLES, role);
+export const canManageClasses = (role: string | null | undefined) => has(CLASS_WRITE_ROLES, role);

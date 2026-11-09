@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireSection } from '@/lib/auth';
 import { getSchool } from '@/lib/data';
-import { invitableRoles, roleLabel } from '@/lib/roles';
+import { canViewStudents, invitableRoles, roleLabel } from '@/lib/roles';
 
 export const metadata = { title: 'Administration' };
 
@@ -24,6 +24,18 @@ export default async function AdminHome() {
           <Link href="/admin/school" className="card block hover:border-accent">
             <h2 className="font-semibold">School settings</h2>
             <p className="text-sm text-slate-600">Name, motto, brand colour, terms</p>
+          </Link>
+        )}
+        {canViewStudents(session.role) && (
+          <Link href="/admin/students" className="card block hover:border-accent">
+            <h2 className="font-semibold">Students</h2>
+            <p className="text-sm text-slate-600">Records, search, CSV import</p>
+          </Link>
+        )}
+        {canViewStudents(session.role) && (
+          <Link href="/admin/classes" className="card block hover:border-accent">
+            <h2 className="font-semibold">Classes</h2>
+            <p className="text-sm text-slate-600">Classes and streams</p>
           </Link>
         )}
         {canInvite && (

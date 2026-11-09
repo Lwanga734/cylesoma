@@ -22,3 +22,5 @@
 | 2026-11-03 | Setup links can be re-issued only while `profiles.password_set_at` is empty and the person belongs to no other school | Helps stuck invitees without allowing takeover of accounts in use |
 | 2026-11-03 | School suspension is enforced in `current_school()` (returns null for a non-active school) | One change blocks every row-level-security rule for that school at once, without touching each policy |
 | 2026-11-03 | Schools can be deleted only when suspended and free of student records, with the web name typed | Prevents accidental permanent data loss |
+| 2026-11-04 | CSV import is validated in the browser (preview) AND again on the server, then done by one database function in a single transaction | Fast feedback for the user; the server never trusts the browser; all-or-nothing writes |
+| 2026-11-04 | Write policies must check the role in WITH CHECK (migration 8) and a role x table matrix script guards it | INSERT is governed by WITH CHECK only; found by testing before any real data existed |
