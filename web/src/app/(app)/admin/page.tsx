@@ -32,6 +32,12 @@ export default async function AdminHome() {
             <p className="text-sm text-slate-600">Records, search, CSV import</p>
           </Link>
         )}
+        {['owner', 'head', 'deputy', 'hod', 'registrar', 'hr'].includes(session.role ?? '') && (
+          <Link href="/attendance" className="card block hover:border-accent">
+            <h2 className="font-semibold">Biometric attendance</h2>
+            <p className="text-sm text-slate-600">BioTime connection, ZKTeco F18 terminals, pupil scans and SMS queue</p>
+          </Link>
+        )}
         {canViewStudents(session.role) && (
           <Link href="/admin/classes" className="card block hover:border-accent">
             <h2 className="font-semibold">Classes</h2>
